@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function resetUI() {
+        console.log("Resetting UI...");
         clearErrorMessage();
         contentArea.style.display = 'none';
         articleContent.innerHTML = ''; // Clear previous article
@@ -43,6 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 1. Fetch and Render Article --- 
     async function loadArticleFromUrl(urlToLoad) {
+        console.log(`--- Loading article from URL: ${urlToLoad} ---`);
         resetUI(); // Clear previous state
         loadUrlButton.disabled = true; // Disable button while loading
         loadUrlButton.textContent = 'Loading...';
@@ -75,12 +77,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(errorDetails);
             }
             
+            console.log("[loadArticleFromUrl] Fetch OK, reading response body...");
             const html = await response.text();
+            console.log(`[loadArticleFromUrl] Response body read (${html.length} chars), parsing HTML...`);
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
+            console.log("[loadArticleFromUrl] HTML parsed into DOM document.");
+
             // Extract text content *after* successful fetch
             fullArticleText = doc.body.textContent || ""; 
             
+            console.log("Fetch successful, parsing content...");
             parseAndDisplayArticle(html, doc); // Pass the parsed doc to avoid re-parsing
             aiSelectToggle.style.display = 'flex'; // Show FAB only on success
 
@@ -95,10 +102,12 @@ document.addEventListener('DOMContentLoaded', () => {
              loadUrlButton.disabled = false; // Re-enable button
              loadUrlButton.textContent = 'Load URL';
         }
+        console.log(`--- Finished loading article from URL: ${urlToLoad} ---`);
     }
 
     // Modified parseAndDisplayArticle to accept parsed doc and use currentArticleUrl
     function parseAndDisplayArticle(html, doc) { 
+        console.log("[parseAndDisplayArticle] Started parsing...");
         // --- Selector Logic (Try specific -> generic article -> generic project -> fallback main/body) --- 
         let mainContentElement = doc.querySelector('div.single-post__content'); // MS Research blog/article
 
@@ -178,6 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
              articleContent.innerHTML = '<p class="error-message">Could not parse main article content from the fetched HTML.</p>';
              aiSelectToggle.style.display = 'none'; // Hide FAB if parsing fails
         }
+        console.log("[parseAndDisplayArticle] Finished parsing.");
     }
 
     // --- 2. Selection Logic --- 
@@ -286,7 +296,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 4. Handle Interaction (Mock LLM Call) --- 
     async function handleInteraction(type, element) { // Make function async
-        console.log(`Action: ${type} on element:`, element);
+        console.log(`[handleInteraction] Action: ${type} on element:`, element.tagName);
         removeInteractionOptions(); // Hide buttons immediately
 
         // Show loading state (optional, could add a spinner or message)
@@ -323,6 +333,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         // --- End Prepare data payload --- 
 
+        console.log("[handleInteraction] Sending request to /api/llm-request with payload:", payload);
+
         try {
             // Call the serverless function
             const response = await fetch('/api/llm-request', {
@@ -347,6 +359,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             const llmResponseText = data.response;
 
+            console.log("[handleInteraction] Received successful LLM response.");
             // Insert the actual LLM response
             insertAiResponse(element, type, llmResponseText);
 
@@ -422,12 +435,15 @@ document.addEventListener('DOMContentLoaded', () => {
         makeElementsSelectable();
     }
 
+    // --- Event Listeners --- 
+
     // --- Initial Setup --- 
     // Remove initial fetch
     // fetchAndRenderArticle(); 
     
     // Add listener for the Load URL button
     loadUrlButton.addEventListener('click', () => {
+        console.log("Load URL button clicked.");
         const url = urlInput.value.trim();
         loadArticleFromUrl(url);
     });
@@ -443,7 +459,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Add listeners for example links
     if (exampleLinksContainer) {
          exampleLinksContainer.addEventListener('click', (event) => {
+             console.log("Click detected within example links container.");
              if (event.target.tagName === 'A' && event.target.dataset.url) {
+                 console.log(`Example link clicked: ${event.target.textContent}`);
                  event.preventDefault();
                  urlInput.value = event.target.dataset.url;
                  loadUrlButton.click(); // Trigger load
@@ -452,5 +470,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     aiSelectToggle.addEventListener('click', toggleAiSelectMode); // Keep FAB listener
+
+    console.log("Initial script setup complete. Waiting for user input.");
 
 }); 
