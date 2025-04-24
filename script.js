@@ -121,10 +121,10 @@ document.addEventListener('DOMContentLoaded', () => {
          }
 
         // Specific handling for <main class="project"> with a single child container
-        if (mainContentElement && mainContentElement.tagName === 'MAIN' && mainContentElement.classList.contains('project') && mainContentElement.children.length === 1) {
-             console.warn("Selected <main class='project'> has only one child. Assuming child is the actual content container.");
-             mainContentElement = mainContentElement.children[0]; // Re-target to the single child
-        }
+        // if (mainContentElement && mainContentElement.tagName === 'MAIN' && mainContentElement.classList.contains('project') && mainContentElement.children.length === 1) {
+        //     console.warn("Selected <main class='project'> has only one child. Assuming child is the actual content container.");
+        //     mainContentElement = mainContentElement.children[0]; // Re-target to the single child - Handled by ms-row check below now
+        // }
 
         // If still no specific container, fallback to body but warn the user
         if (!mainContentElement || mainContentElement.tagName === 'BODY') {
@@ -136,10 +136,22 @@ document.addEventListener('DOMContentLoaded', () => {
         if (mainContentElement) {
             console.log("Found content container:", mainContentElement.tagName, mainContentElement.className);
             articleContent.innerHTML = ''; // Clear loading message
-            const children = Array.from(mainContentElement.children);
-            console.log(`Container has ${children.length} direct children.`);
+            
+            let elementsToParse = [];
+            // If it's the specific project structure (main -> div.ms-row -> columns), parse the columns' children
+            if (mainContentElement.tagName === 'DIV' && mainContentElement.classList.contains('ms-row') && mainContentElement.classList.contains('block-content') && mainContentElement.children.length > 0) {
+                 console.warn("Container is div.ms-row. Parsing children of its children (columns/sections).");
+                 Array.from(mainContentElement.children).forEach(columnOrSection => {
+                     elementsToParse.push(...Array.from(columnOrSection.children));
+                 });
+             } else {
+                 // Default: parse direct children of the found container
+                 elementsToParse = Array.from(mainContentElement.children);
+             }
+
+            console.log(`Iterating through ${elementsToParse.length} elements for content.`);
             let addedNodes = 0;
-            children.forEach(node => {
+            elementsToParse.forEach(node => {
                  if (['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'IMG', 'UL', 'OL', 'BLOCKQUOTE', 'FIGURE', 'TABLE'].includes(node.tagName)) {
                     // Special handling for images: use currentArticleUrl as base
                     if (node.tagName === 'IMG' || node.tagName === 'FIGURE') {
