@@ -8,16 +8,36 @@
 </head>
 <body>
     <header>
-        <h1>Article Reader</h1>
-        <button id="aiSelectToggle">Enable AI Select</button>
+        <!-- Title can be dynamic or removed -->
+         <h1>Generative Reader PoC</h1> 
     </header>
     
-    <main>
+    <div class="url-input-section">
+        <label for="urlInput">Enter Article URL:</label>
+        <input type="url" id="urlInput" placeholder="https://..." size="60">
+        <button id="loadUrlButton">Load URL</button>
+        
+        <p class="info-text">Enter the URL of an article to read. This tool uses simple content extraction and has primarily been tested on Microsoft Research articles, blogs, and project pages. Results may vary for other sites.</p>
+        
+        <div class="example-links">
+            <strong>Examples:</strong>
+            <ul>
+                <li><a href="#" data-url="https://www.microsoft.com/en-us/research/articles/whamm-real-time-world-modelling-of-interactive-environments/">WHAMM Article</a></li>
+                <li><a href="#" data-url="https://www.microsoft.com/en-us/research/blog/the-future-of-ai-in-knowledge-work-tools-for-thought-at-chi-2025/">Future of AI Blog</a></li>
+                <li><a href="#" data-url="https://www.microsoft.com/en-us/research/project/sonora/">Sonora Project</a></li>
+            </ul>
+        </div>
+         <div id="errorMessage" class="error-message" style="display: none;"></div>
+    </div>
+
+    <main id="contentArea" style="display: none;"> 
         <article id="articleContent">
-            <!-- Article content will be loaded here by JavaScript -->
-            <p>Loading...</p>
+            <!-- Article content will be loaded here -->
         </article>
     </main>
+
+    <!-- FAB is initially hidden -->
+    <button id="aiSelectToggle" style="display: none;">Enable AI Select</button>
 
     <script src="script.js"></script>
 </body>

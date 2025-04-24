@@ -1,80 +1,113 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Get references to new elements
+    const urlInput = document.getElementById('urlInput');
+    const loadUrlButton = document.getElementById('loadUrlButton');
+    const exampleLinksContainer = document.querySelector('.example-links');
+    const contentArea = document.getElementById('contentArea');
+    const errorMessageDiv = document.getElementById('errorMessage');
+    
     const articleContent = document.getElementById('articleContent');
     const aiSelectToggle = document.getElementById('aiSelectToggle');
-    const articleUrl = 'https://www.microsoft.com/en-us/research/articles/a-periodic-table-for-machine-learning/';
-    // Define the proxy URL - Now points to the Vercel serverless function route
-    const proxyUrl = '/api/fetch-article';
+    const proxyUrl = '/api/fetch-article'; // Keep using the Vercel function route
 
     let isAiSelectMode = false;
     let selectedElement = null;
-    let fullArticleText = ""; // Store full article text for context
+    let fullArticleText = ""; 
+    let currentArticleUrl = ""; // Store the currently loaded URL
+
+    // --- Helper Functions --- 
+    function showErrorMessage(message) {
+        errorMessageDiv.textContent = message;
+        errorMessageDiv.style.display = 'block';
+    }
+
+    function clearErrorMessage() {
+        errorMessageDiv.textContent = '';
+        errorMessageDiv.style.display = 'none';
+    }
+
+    function resetUI() {
+        clearErrorMessage();
+        contentArea.style.display = 'none';
+        articleContent.innerHTML = ''; // Clear previous article
+        aiSelectToggle.style.display = 'none'; // Hide FAB
+        fullArticleText = "";
+        currentArticleUrl = "";
+        isAiSelectMode = false;
+        selectedElement = null;
+        removeInteractionOptions();
+        // Reset button text if needed
+        aiSelectToggle.textContent = 'Enable AI Select';
+        document.body.classList.remove('ai-select-mode');
+    }
 
     // --- 1. Fetch and Render Article --- 
-    async function fetchAndRenderArticle() {
-        articleContent.innerHTML = '<p>Fetching article via proxy...</p>';
-        try {
-            // Construct the URL for the proxy, passing the target URL as a query parameter
-            const fetchUrl = `${proxyUrl}?url=${encodeURIComponent(articleUrl)}`;
-            console.log('Fetching from proxy:', fetchUrl);
+    async function loadArticleFromUrl(urlToLoad) {
+        resetUI(); // Clear previous state
+        loadUrlButton.disabled = true; // Disable button while loading
+        loadUrlButton.textContent = 'Loading...';
+        
+        // Basic URL validation
+        if (!urlToLoad || !urlToLoad.startsWith('http')) {
+            showErrorMessage('Please enter a valid URL (starting with http or https).');
+            loadUrlButton.disabled = false;
+            loadUrlButton.textContent = 'Load URL';
+            return;
+        }
+        
+        currentArticleUrl = urlToLoad; // Store the URL we are loading
+        articleContent.innerHTML = '<p>Fetching article via proxy...</p>'; // Show temp message in hidden area
+        contentArea.style.display = 'block'; // Show content area for loading message
 
+        try {
+            const fetchUrl = `${proxyUrl}?url=${encodeURIComponent(currentArticleUrl)}`;
+            console.log('Fetching from proxy:', fetchUrl);
             const response = await fetch(fetchUrl);
 
             if (!response.ok) {
-                // Try to get error details from the proxy response
-                let errorDetails = `HTTP error! status: ${response.status}`;
+                let errorDetails = `Failed to fetch: ${response.status}`;
                 try {
-                    const errorData = await response.json(); // Proxy sends JSON on error
-                    errorDetails = errorData.error || JSON.stringify(errorData);
+                    const errorData = await response.json(); 
+                    errorDetails += ` - ${errorData.error || JSON.stringify(errorData)}`;
                 } catch (e) {
-                    // If response is not JSON, use text
-                    errorDetails = await response.text();
+                     try { errorDetails += ` - ${await response.text()}` } catch (e2) {} 
                 } 
                 throw new Error(errorDetails);
             }
             
             const html = await response.text();
-            // Store the raw HTML or parsed text for context
-            // Storing parsed text might be better
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
-            fullArticleText = doc.body.textContent || ""; // Simple text extraction for context
+            // Extract text content *after* successful fetch
+            fullArticleText = doc.body.textContent || ""; 
             
-            parseAndDisplayArticle(html);
+            parseAndDisplayArticle(html, doc); // Pass the parsed doc to avoid re-parsing
+            aiSelectToggle.style.display = 'flex'; // Show FAB only on success
 
         } catch (error) {
             console.error('Error fetching or parsing article:', error);
-            articleContent.innerHTML = `<p>Failed to load article. Check if the proxy server is running. <br>Error: ${error.message}</p>`;
-             // Optionally load placeholder if fetch fails completely
-             // loadPlaceholderContent(); 
+            // Display error in the main area instead of the URL section
+            contentArea.style.display = 'block';
+            articleContent.innerHTML = `<p class="error-message">Failed to load article. <br>Error: ${error.message}</p>`;
+            // Hide FAB on error
+            aiSelectToggle.style.display = 'none';
+        } finally {
+             loadUrlButton.disabled = false; // Re-enable button
+             loadUrlButton.textContent = 'Load URL';
         }
     }
 
-    function parseAndDisplayArticle(html) {
-        // TODO: Implement robust HTML parsing to extract the main content
-        // This is a very simplified example and likely needs refinement
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        
-        // --- Let's try a more specific selector based on observed structure ---
-        let mainContentElement = doc.querySelector('div.single-post__content'); 
-
+    // Modified parseAndDisplayArticle to accept parsed doc and use currentArticleUrl
+    function parseAndDisplayArticle(html, doc) { 
+        // --- Selector Logic (Use the latest refined version) --- 
+        let mainContentElement = doc.querySelector('div.single-post__content'); // MS Research specific
         if (!mainContentElement) {
-            // Fallback to the previous semantic selector attempt
-            console.warn("Primary selector 'div.single-post__content' failed, trying 'main article'...");
-            mainContentElement = doc.querySelector('main article');
+             mainContentElement = doc.querySelector('article'); // General article tag
         }
-
-        if (!mainContentElement) {
-            // Fallback to the previous specific selector attempt
-             console.warn('Selector "main article" failed, trying "div[class*="content--article-body"] article"...');
-            mainContentElement = doc.querySelector('div[class*="content--article-body"] article');
-        }
-        
-        if (!mainContentElement) {
-            // Fallback selectors if the primary ones fail
-             console.warn("Specific content selectors failed, trying generic fallbacks 'article' or 'main'...");
-             mainContentElement = doc.querySelector('article') || doc.querySelector('main');
-        }
+         if (!mainContentElement) {
+             mainContentElement = doc.querySelector('main'); // General main tag
+         }
+        // Add more fallbacks if needed
 
         if (!mainContentElement || mainContentElement.tagName === 'BODY') {
             console.warn("Could not find specific article container, using document.body. Parsing might include extra elements.");
@@ -84,61 +117,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (mainContentElement) {
             console.log("Found content container:", mainContentElement.tagName, mainContentElement.className);
-            // Clear loading message
-            articleContent.innerHTML = '';
-            // Append relevant child nodes (paragraphs, images, headings, lists, blockquotes)
-            // We iterate through direct children and filter by common content tags.
+            articleContent.innerHTML = ''; // Clear loading message
             const children = Array.from(mainContentElement.children);
             console.log(`Container has ${children.length} direct children.`);
             let addedNodes = 0;
             children.forEach(node => {
-                // Filter for common block-level content elements
                  if (['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'IMG', 'UL', 'OL', 'BLOCKQUOTE', 'FIGURE', 'TABLE'].includes(node.tagName)) {
-                    // Special handling for images: ensure src attributes are absolute if needed
-                    // (The MS Research page seems to use relative paths sometimes)
+                    // Special handling for images: use currentArticleUrl as base
                     if (node.tagName === 'IMG' || node.tagName === 'FIGURE') {
                         const imgs = node.tagName === 'IMG' ? [node] : node.querySelectorAll('img');
                         imgs.forEach(img => {
-                            // Create a URL object from the img.src relative to the original article URL
                             try {
-                                const absoluteSrc = new URL(img.getAttribute('src'), articleUrl).href;
+                                const absoluteSrc = new URL(img.getAttribute('src'), currentArticleUrl).href; // Use current URL
                                 img.setAttribute('src', absoluteSrc);
-                                console.log(`Adjusted image src to: ${absoluteSrc}`);
                             } catch (e) {
                                 console.warn(`Could not make absolute URL for image src: ${img.getAttribute('src')}`, e);
-                                // Optionally remove the image or leave it as is if it fails
-                                // img.remove(); 
                             }
                         });
                     }
                     
-                    // Ensure elements don't have nested interactive elements that might interfere
                     node.querySelectorAll('button, a[href]').forEach(interactive => interactive.remove());
-                    
-                    // Add the cleaned node
                     articleContent.appendChild(node.cloneNode(true));
                     addedNodes++;
                  }
             });
             console.log(`Added ${addedNodes} nodes to the article content.`);
-             makeElementsSelectable(); // Make the newly added elements selectable
+             makeElementsSelectable(); 
         } else {
              console.error("Could not find *any* suitable content container using selectors.");
-             articleContent.innerHTML = '<p>Could not parse main article content even with fallbacks.</p>';
+             articleContent.innerHTML = '<p class="error-message">Could not parse main article content from the fetched HTML.</p>';
+             aiSelectToggle.style.display = 'none'; // Hide FAB if parsing fails
         }
-    }
-
-    // Placeholder function (no longer the primary way to load)
-    function loadPlaceholderContent() {
-        // Example: Load content if fetch fails or CORS is an issue
-        articleContent.innerHTML = `
-            <h2>Placeholder Content</h2>
-            <p>This is the first paragraph. Direct fetching from the URL is often blocked by browser security (CORS). We need a backend proxy or browser extension for live fetching during development.</p>
-            <img src="https://via.placeholder.com/600x200.png?text=Placeholder+Image" alt="Placeholder Image">
-            <p>This is another paragraph. Click the "Enable AI Select" button, then click on a paragraph or image to select it.</p>
-            <p>Once selected, interaction buttons (Explain/Simplify) would appear (though they are not implemented yet).</p>
-        `;
-        makeElementsSelectable();
     }
 
     // --- 2. Selection Logic --- 
@@ -384,7 +393,34 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Initial Setup --- 
-    aiSelectToggle.addEventListener('click', toggleAiSelectMode);
-    fetchAndRenderArticle(); // Initial article load via proxy
+    // Remove initial fetch
+    // fetchAndRenderArticle(); 
+    
+    // Add listener for the Load URL button
+    loadUrlButton.addEventListener('click', () => {
+        const url = urlInput.value.trim();
+        loadArticleFromUrl(url);
+    });
+
+    // Add listener for Enter key in URL input
+    urlInput.addEventListener('keypress', (event) => {
+         if (event.key === 'Enter') {
+             event.preventDefault(); // Prevent form submission if it were in a form
+             loadUrlButton.click(); // Trigger button click
+         }
+    });
+
+    // Add listeners for example links
+    if (exampleLinksContainer) {
+         exampleLinksContainer.addEventListener('click', (event) => {
+             if (event.target.tagName === 'A' && event.target.dataset.url) {
+                 event.preventDefault();
+                 urlInput.value = event.target.dataset.url;
+                 loadUrlButton.click(); // Trigger load
+             }
+         });
+    }
+
+    aiSelectToggle.addEventListener('click', toggleAiSelectMode); // Keep FAB listener
 
 }); 
