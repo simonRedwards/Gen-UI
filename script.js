@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let isAiSelectMode = false;
     let selectedElement = null;
+    let fullArticleText = ""; // Store full article text for context
 
     // --- 1. Fetch and Render Article --- 
     async function fetchAndRenderArticle() {
@@ -32,6 +33,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             const html = await response.text();
+            // Store the raw HTML or parsed text for context
+            // Storing parsed text might be better
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            fullArticleText = doc.body.textContent || ""; // Simple text extraction for context
+            
             parseAndDisplayArticle(html);
 
         } catch (error) {
@@ -239,18 +246,59 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- 4. Handle Interaction (Mock LLM Call) --- 
-    function handleInteraction(type, element) {
+    async function handleInteraction(type, element) { // Make function async
         console.log(`Action: ${type} on element:`, element);
-        removeInteractionOptions(); // Hide buttons after clicking
+        removeInteractionOptions(); // Hide buttons immediately
 
-        // Mock LLM response insertion
-        const responseText = type === 'explain' 
-            ? `This is a mocked explanation for the selected ${element.tagName.toLowerCase()}. It would normally contain a detailed breakdown based on the article's context.` 
-            : `This is a mocked simplification for the selected ${element.tagName.toLowerCase()}. It presents the core idea in simpler terms.`;
+        // Show loading state (optional, could add a spinner or message)
+        element.classList.add('ai-loading'); // Example class for loading style
+        const loadingIndicator = document.createElement('div');
+        loadingIndicator.className = 'ai-response ai-loading-indicator';
+        loadingIndicator.innerHTML = '<h4>Processing...</h4><p>Contacting AI assistant...</p>';
+        insertOrReplaceResponse(element, loadingIndicator); // Insert loading indicator
 
-        insertAiResponse(element, type, responseText);
+        // Get the selected text content (simple approach)
+        const selectedText = element.textContent;
 
-        // Deselect after action
+        try {
+            // Call the serverless function
+            const response = await fetch('/api/llm-request', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    selectedText: selectedText,
+                    actionType: type,
+                    context: fullArticleText // Send full article text as context
+                }),
+            });
+
+            element.classList.remove('ai-loading'); // Remove loading style
+
+            if (!response.ok) {
+                let errorMsg = `API request failed: ${response.status}`;
+                 try { 
+                    const errData = await response.json();
+                     errorMsg = errData.error || JSON.stringify(errData);
+                 } catch (e) { /* Ignore if response wasn't JSON */ }
+                throw new Error(errorMsg);
+            }
+
+            const data = await response.json();
+            const llmResponseText = data.response;
+
+            // Insert the actual LLM response
+            insertAiResponse(element, type, llmResponseText);
+
+        } catch (error) {
+            console.error('Error during LLM interaction:', error);
+            element.classList.remove('ai-loading'); // Ensure loading style is removed on error
+            // Display error message instead of response
+            insertAiResponse(element, 'error', `Error: ${error.message}`);
+        }
+        
+        // --- Original code for deselecting etc. ---
         if (selectedElement) {
             selectedElement.classList.remove('ai-selected');
             selectedElement = null;
@@ -261,18 +309,42 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- 5. Dynamic Content Insertion --- 
+    // Helper to insert or replace the AI response/loading block
+    function insertOrReplaceResponse(targetElement, responseDiv) {
+         const existingResponse = targetElement.nextElementSibling;
+         if (existingResponse && (existingResponse.classList.contains('ai-response') || existingResponse.classList.contains('ai-loading-indicator'))) {
+             targetElement.parentNode.replaceChild(responseDiv, existingResponse);
+         } else {
+             targetElement.parentNode.insertBefore(responseDiv, targetElement.nextSibling);
+         }
+    }
+    
     function insertAiResponse(targetElement, type, responseContent) {
-        // Remove any existing AI response related to this target element first
-        const existingResponse = targetElement.nextElementSibling;
-        if (existingResponse && existingResponse.classList.contains('ai-response')) {
-            existingResponse.remove();
-        }
+         // Remove any existing AI response related to this target element first (handled by insertOrReplaceResponse now)
+//         const existingResponse = targetElement.nextElementSibling;
+//         if (existingResponse && existingResponse.classList.contains('ai-response')) {
+//             existingResponse.remove();
+//         }
 
         const responseDiv = document.createElement('div');
-        responseDiv.className = 'ai-response';
+        responseDiv.className = 'ai-response'; // General class
 
         const heading = document.createElement('h4');
-        heading.textContent = type === 'explain' ? 'Explanation:' : 'Simplified:';
+        // Adjust heading based on type (explain, simplify, error)
+        switch (type) {
+            case 'explain':
+                heading.textContent = 'Explanation:';
+                break;
+            case 'simplify':
+                heading.textContent = 'Simplified:';
+                break;
+            case 'error':
+                 heading.textContent = 'Error:';
+                 responseDiv.classList.add('ai-error'); // Add error class for styling
+                 break;
+            default:
+                 heading.textContent = 'Response:';
+        }
         
         const contentP = document.createElement('p');
         // Use innerHTML in case the LLM response contains basic formatting (bold, italics)
@@ -282,9 +354,10 @@ document.addEventListener('DOMContentLoaded', () => {
         responseDiv.appendChild(heading);
         responseDiv.appendChild(contentP);
 
-        // Insert the response *after* the target element
-        targetElement.parentNode.insertBefore(responseDiv, targetElement.nextSibling);
-         console.log("Inserted AI response after:", targetElement);
+        // Insert or replace the response block
+        insertOrReplaceResponse(targetElement, responseDiv);
+        
+        console.log(`Inserted AI response (${type}) after:`, targetElement);
         
         // Re-enable selection listeners as inserting might affect siblings
         makeElementsSelectable();
