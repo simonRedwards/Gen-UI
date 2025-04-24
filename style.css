@@ -1,0 +1,136 @@
+body {
+    font-family: sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+}
+
+header {
+    background: #333;
+    color: #fff;
+    padding: 1rem 0;
+    text-align: center;
+}
+
+header h1 {
+    margin: 0;
+    padding-bottom: 0.5rem;
+}
+
+main {
+    max-width: 800px; /* Readable width */
+    margin: 2rem auto;
+    padding: 1rem;
+    background: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+#articleContent {
+    /* Add specific styling for article elements if needed */
+}
+
+#articleContent img {
+    max-width: 100%;
+    height: auto;
+    display: block; /* Prevents extra space below image */
+    margin: 1rem 0;
+}
+
+#articleContent p,
+#articleContent h1,
+#articleContent h2,
+#articleContent h3,
+#articleContent h4,
+#articleContent ul,
+#articleContent ol,
+#articleContent blockquote {
+    margin-bottom: 1em;
+}
+
+/* AI Select Mode Styles */
+body.ai-select-mode #articleContent > * {
+    cursor: pointer; 
+    transition: background-color 0.2s ease-in-out;
+}
+
+body.ai-select-mode #articleContent > *:hover {
+    background-color: #e0e0e0; /* Highlight on hover in select mode */
+}
+
+#articleContent > .ai-selected {
+    outline: 2px solid blue;
+    background-color: #d0d0ff;
+}
+
+/* AI Response Styles */
+.ai-response {
+    border-left: 4px solid #4CAF50; /* Green border */
+    margin: 1.5em 0;
+    padding: 0.5em 1em;
+    background-color: #f0fff0; /* Light green background */
+}
+
+.ai-response h4 {
+    margin-top: 0;
+    margin-bottom: 0.5em;
+    color: #2E7D32; /* Darker green */
+}
+
+/* AI Options Buttons (Simple Styling) */
+.ai-options {
+    position: absolute;
+    background: #555;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+    z-index: 10;
+    display: flex; /* Use flexbox for button layout */
+    gap: 5px; /* Space between buttons */
+}
+
+.ai-options button {
+    background-color: #777;
+    color: white;
+    border: none;
+    padding: 4px 8px;
+    cursor: pointer;
+    border-radius: 3px;
+}
+
+.ai-options button:hover {
+    background-color: #999;
+}
+
+header button#aiSelectToggle {
+    /* Keep existing header button styles if needed, or remove if FAB is always floating */
+}
+
+/* Floating Action Button Styles */
+#aiSelectToggle {
+    position: fixed; /* Position relative to the viewport */
+    bottom: 20px;    /* Distance from bottom */
+    right: 20px;     /* Distance from right */
+    width: 60px;     /* Fixed width */
+    height: 60px;    /* Fixed height */
+    background-color: #0078d4; /* Microsoft blue */
+    color: white;
+    border: none;
+    border-radius: 50%; /* Make it circular */
+    padding: 0; /* Remove default padding */
+    font-size: 12px; /* Adjust font size for smaller button */
+    text-align: center; /* Center text */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Add shadow */
+    cursor: pointer;
+    z-index: 1000; /* Ensure it's above other content */
+    display: flex; /* Use flexbox for centering text */
+    justify-content: center;
+    align-items: center;
+    line-height: 1.2; /* Adjust line height */
+    transition: background-color 0.3s ease; /* Smooth transition */
+}
+
+#aiSelectToggle:hover {
+    background-color: #005a9e; /* Darker blue on hover */
+} 
