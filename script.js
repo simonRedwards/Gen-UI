@@ -257,8 +257,32 @@ document.addEventListener('DOMContentLoaded', () => {
         loadingIndicator.innerHTML = '<h4>Processing...</h4><p>Contacting AI assistant...</p>';
         insertOrReplaceResponse(element, loadingIndicator); // Insert loading indicator
 
-        // Get the selected text content (simple approach)
-        const selectedText = element.textContent;
+        // --- Prepare data payload --- 
+        let payload = {
+            actionType: type,
+            context: fullArticleText // Send full article text as context
+        };
+
+        if (element.tagName === 'IMG') {
+            payload.imageUrl = element.src;
+            payload.imageAlt = element.alt;
+            console.log("Preparing payload for IMAGE:", payload);
+        } else if (element.tagName === 'FIGURE') {
+             const img = element.querySelector('img');
+             if (img) {
+                 payload.imageUrl = img.src;
+                 payload.imageAlt = img.alt;
+                 console.log("Preparing payload for FIGURE with IMAGE:", payload);
+             } else {
+                  // Fallback for figures without images (unlikely for interaction)
+                  payload.selectedText = element.textContent;
+                  console.log("Preparing payload for FIGURE (no image found, using textContent):", payload);
+             }
+        } else {
+             payload.selectedText = element.textContent; // Get the selected text content
+             console.log("Preparing payload for TEXT element:", payload);
+        }
+        // --- End Prepare data payload --- 
 
         try {
             // Call the serverless function
@@ -267,11 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ 
-                    selectedText: selectedText,
-                    actionType: type,
-                    context: fullArticleText // Send full article text as context
-                }),
+                body: JSON.stringify(payload), // Send the prepared payload
             });
 
             element.classList.remove('ai-loading'); // Remove loading style

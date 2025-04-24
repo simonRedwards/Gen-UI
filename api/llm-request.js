@@ -30,18 +30,25 @@ module.exports = async (req, res) => {
     }
 
     // --- Get Data from Request Body --- 
-    let selectedText, actionType, context;
+    let selectedText, actionType, context, imageUrl, imageAlt;
     try {
         // Vercel automatically parses JSON body for POST if Content-Type is correct
         if (typeof req.body !== 'object' || req.body === null) {
              throw new Error("Invalid or missing request body. Expected JSON.");
         }
+        // Extract potential fields
         selectedText = req.body.selectedText;
         actionType = req.body.actionType;
         context = req.body.context || ""; // Optional: full article text for context
+        imageUrl = req.body.imageUrl;
+        imageAlt = req.body.imageAlt;
 
-        if (!selectedText || !actionType) {
-            throw new Error("Missing 'selectedText' or 'actionType' in request body.");
+        // Validate: We need an action type and *either* text or image url
+        if (!actionType) {
+             throw new Error("Missing 'actionType' in request body.");
+        }
+        if (!selectedText && !imageUrl) {
+            throw new Error("Missing 'selectedText' or 'imageUrl' in request body.");
         }
         if (actionType !== 'explain' && actionType !== 'simplify') {
             throw new Error("Invalid 'actionType'. Must be 'explain' or 'simplify'.");
@@ -62,20 +69,30 @@ Here is the full text of the article for context (the user selected only a part 
 ${context.substring(0, 5000)}...
 --- ARTICLE END ---
 ` : ``; // Limit context length
-    const selectedInstruction = `The user selected the following text:
+    
+    // Create instruction based on text OR image
+    let selectionInstruction = ``;
+    if (imageUrl) {
+        selectionInstruction = `The user selected the image with the following details:
+- Source URL: ${imageUrl}
+- Alt Text: ${imageAlt || '(Not provided)'}
+`;
+    } else {
+        selectionInstruction = `The user selected the following text:
 --- SELECTED TEXT START ---
 ${selectedText}
 --- SELECTED TEXT END ---
 `;
+    }
 
     if (actionType === 'explain') {
         prompt = `${baseInstruction}${contextInstruction}
-${selectedInstruction}
-Please explain the selected text in the context of the article. Focus on clarifying its meaning and significance within the article's narrative. Keep the explanation concise but informative.`;
+${selectionInstruction}
+Please explain the selected ${imageUrl ? 'image' : 'text'} in the context of the article. Focus on clarifying its meaning and significance within the article's narrative. ${imageUrl ? 'Describe what the image likely represents based on its alt text and the article context.' : ''} Keep the explanation concise but informative.`;
     } else { // simplify
         prompt = `${baseInstruction}${contextInstruction}
-${selectedInstruction}
-Please simplify the selected text. Rephrase it in simpler terms, suitable for someone who may not be familiar with the technical jargon, while retaining the core meaning within the article's context.`;
+${selectionInstruction}
+Please simplify the selected ${imageUrl ? 'image' : 'text'}. ${imageUrl ? 'Describe the core idea or purpose of the image in simpler terms, based on its alt text and the article context.' : 'Rephrase the text in simpler terms, suitable for someone who may not be familiar with the technical jargon, while retaining the core meaning within the article context.'}`;
     }
 
     // --- Call Google Generative AI (Gemini) --- 
