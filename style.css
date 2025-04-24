@@ -136,29 +136,31 @@ header button#aiSelectToggle {
 /* Floating Action Button Styles */
 #aiSelectToggle {
     position: fixed; /* Position relative to the viewport */
-    bottom: 20px;    /* Distance from bottom */
-    right: 20px;     /* Distance from right */
-    width: 60px;     /* Fixed width */
-    height: 60px;    /* Fixed height */
+    bottom: 30px;    /* Increased distance from bottom */
+    right: 30px;     /* Increased distance from right */
+    width: 80px;     /* Increased width */
+    height: 80px;    /* Increased height */
     background-color: #0078d4; /* Microsoft blue */
     color: white;
     border: none;
     border-radius: 50%; /* Make it circular */
-    padding: 0; /* Remove default padding */
-    font-size: 12px; /* Adjust font size for smaller button */
+    padding: 5px; /* Added slight padding for text */
+    font-size: 14px; /* Increased font size */
+    font-weight: bold; /* Make text bolder */
     text-align: center; /* Center text */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Add shadow */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* Slightly larger shadow */
     cursor: pointer;
     z-index: 1000; /* Ensure it's above other content */
     display: flex; /* Use flexbox for centering text */
     justify-content: center;
     align-items: center;
     line-height: 1.2; /* Adjust line height */
-    transition: background-color 0.3s ease; /* Smooth transition */
+    transition: background-color 0.3s ease, transform 0.2s ease; /* Smooth transition */
 }
 
 #aiSelectToggle:hover {
     background-color: #005a9e; /* Darker blue on hover */
+    transform: scale(1.05); /* Slightly enlarge on hover */
 }
 
 /* URL Input Section Styles */
@@ -183,6 +185,10 @@ header button#aiSelectToggle {
     border: 1px solid #ccc;
     border-radius: 4px;
     /* width: 60%; // Adjust as needed */
+    max-width: 80%; /* Limit width on larger screens */
+    width: 100%; /* Try to take available width */
+    box-sizing: border-box; /* Include padding/border in width calculation */
+    margin-bottom: 0.5rem; /* Add space below on mobile */
 }
 
 .url-input-section button {
@@ -225,6 +231,7 @@ header button#aiSelectToggle {
 .example-links li {
      display: inline-block; 
      margin-right: 1rem;
+     margin-bottom: 0.5rem; /* Add spacing when wrapped/stacked */
 }
 
 .example-links a {
@@ -237,4 +244,41 @@ header button#aiSelectToggle {
     color: #d32f2f;
     margin-top: 1rem;
     font-weight: bold;
+}
+
+/* --- Mobile Styles --- */
+@media (max-width: 600px) {
+    .url-input-section,
+    main {
+        margin: 1rem;
+        padding: 1rem;
+    }
+
+    .url-input-section input[type="url"] {
+        max-width: 100%; /* Allow full width on small screens */
+        margin-right: 0; /* Remove right margin */
+    }
+
+    .url-input-section button {
+        margin-top: 0.5rem; /* Add space above button */
+        width: 100%; /* Make button full width */
+    }
+
+    .example-links ul {
+        text-align: center;
+    }
+
+    .example-links li {
+        display: block; /* Stack links vertically */
+        margin-right: 0;
+        margin-bottom: 0.75rem;
+    }
+
+    #aiSelectToggle {
+        width: 60px; /* Slightly smaller FAB */
+        height: 60px;
+        bottom: 15px; 
+        right: 15px;
+        font-size: 11px;
+    }
 } 
