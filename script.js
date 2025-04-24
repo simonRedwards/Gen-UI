@@ -99,16 +99,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Modified parseAndDisplayArticle to accept parsed doc and use currentArticleUrl
     function parseAndDisplayArticle(html, doc) { 
-        // --- Selector Logic (Use the latest refined version) --- 
-        let mainContentElement = doc.querySelector('div.single-post__content'); // MS Research specific
+        // --- Selector Logic (Try specific -> generic article -> generic project -> fallback main/body) --- 
+        let mainContentElement = doc.querySelector('div.single-post__content'); // MS Research blog/article
+
+        if (!mainContentElement) { 
+            console.warn("Selector 'div.single-post__content' failed, trying project page containers...");
+            // Common patterns for project page content within main
+            mainContentElement = doc.querySelector('main div[class*="section--body"]') || 
+                                 doc.querySelector('main div[class*="content-container"]') ||
+                                 doc.querySelector('main div.content'); // Add more specific project selectors if needed
+        }
+
         if (!mainContentElement) {
+             console.warn("Project page selectors failed, trying generic <article>...");
              mainContentElement = doc.querySelector('article'); // General article tag
         }
+
          if (!mainContentElement) {
+             console.warn("Generic <article> selector failed, trying generic <main>...");
              mainContentElement = doc.querySelector('main'); // General main tag
          }
-        // Add more fallbacks if needed
 
+        // If still no specific container, fallback to body but warn the user
         if (!mainContentElement || mainContentElement.tagName === 'BODY') {
             console.warn("Could not find specific article container, using document.body. Parsing might include extra elements.");
             mainContentElement = doc.body;
