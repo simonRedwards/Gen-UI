@@ -136,19 +136,19 @@ header button#aiSelectToggle {
 /* Floating Action Button Styles */
 #aiSelectToggle {
     position: fixed; /* Position relative to the viewport */
-    bottom: 30px;    /* Increased distance from bottom */
-    right: 30px;     /* Increased distance from right */
-    width: 80px;     /* Increased width */
-    height: 80px;    /* Increased height */
+    bottom: 30px;    /* Distance from bottom */
+    left: 30px;      /* Distance from left */
+    width: 110px;    /* Even larger width */
+    height: 110px;   /* Even larger height */
     background-color: #0078d4; /* Microsoft blue */
     color: white;
     border: none;
     border-radius: 50%; /* Make it circular */
-    padding: 5px; /* Added slight padding for text */
-    font-size: 14px; /* Increased font size */
+    padding: 8px; /* Adjust padding for larger size */
+    font-size: 18px; /* Larger font size */
     font-weight: bold; /* Make text bolder */
     text-align: center; /* Center text */
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* Slightly larger shadow */
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3); /* Bigger shadow */
     cursor: pointer;
     z-index: 1000; /* Ensure it's above other content */
     display: flex; /* Use flexbox for centering text */
@@ -275,10 +275,10 @@ header button#aiSelectToggle {
     }
 
     #aiSelectToggle {
-        width: 60px; /* Slightly smaller FAB */
-        height: 60px;
+        width: 80px; /* Larger FAB on mobile */
+        height: 80px;
         bottom: 15px; 
-        right: 15px;
-        font-size: 11px;
+        left: 15px; /* Position left on mobile */
+        font-size: 13px; /* Adjust font for mobile size */
     }
 } 
