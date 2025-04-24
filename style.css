@@ -24,13 +24,15 @@ main {
     padding: 1rem;
     background: #fff;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    overflow-x: hidden; /* Prevent content within from expanding page width */
 }
 
 #articleContent {
     /* Add specific styling for article elements if needed */
 }
 
-#articleContent img {
+#articleContent img,
+#articleContent figure img /* Ensure images within figures are also constrained */ {
     max-width: 100%;
     height: auto;
     display: block; /* Prevents extra space below image */
@@ -252,6 +254,7 @@ header button#aiSelectToggle {
     main {
         margin: 1rem;
         padding: 1rem;
+        overflow-x: hidden; /* Ensure overflow is hidden on mobile too */
     }
 
     .url-input-section input[type="url"] {
