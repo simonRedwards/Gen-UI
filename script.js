@@ -108,59 +108,33 @@ document.addEventListener('DOMContentLoaded', () => {
     // Modified parseAndDisplayArticle to accept parsed doc and use currentArticleUrl
     function parseAndDisplayArticle(html, doc) { 
         console.log("[parseAndDisplayArticle] Started parsing...");
-        // --- Selector Logic (Try specific -> generic article -> generic project -> fallback main/body) --- 
-        let mainContentElement = doc.querySelector('div.single-post__content'); // MS Research blog/article
-
-        if (!mainContentElement) { 
-            console.warn("Selector 'div.single-post__content' failed, trying project page containers...");
-            // Common patterns for project page content within main
-            mainContentElement = doc.querySelector('main div[class*="section--body"]') || 
-                                 doc.querySelector('main div[class*="content-container"]') ||
-                                 doc.querySelector('main div.content'); // Add more specific project selectors if needed
-        }
-
-        if (!mainContentElement) {
-             console.warn("Project page selectors failed, trying generic <article>...");
-             mainContentElement = doc.querySelector('article'); // General article tag
-        }
-
-         if (!mainContentElement) {
-             console.warn("Generic <article> selector failed, trying generic <main>...");
-             mainContentElement = doc.querySelector('main'); // General main tag
-         }
-
-        // Specific handling for <main class="project"> with a single child container
-        // if (mainContentElement && mainContentElement.tagName === 'MAIN' && mainContentElement.classList.contains('project') && mainContentElement.children.length === 1) {
-        //     console.warn("Selected <main class='project'> has only one child. Assuming child is the actual content container.");
-        //     mainContentElement = mainContentElement.children[0]; // Re-target to the single child - Handled by ms-row check below now
-        // }
+        // --- Selector Logic (Try specific common patterns -> generic -> fallback) --- 
+        let mainContentElement = 
+            doc.querySelector('div.single-post__content') ||      // MS Research blog/article
+            doc.querySelector('div.tab-pane.active') ||         // MS Research project page (active tab)
+            doc.querySelector('main div[class*="section--body"]') || 
+            doc.querySelector('main div[class*="content-container"]') ||
+            doc.querySelector('main div.content') ||           // Other potential project containers
+            doc.querySelector('article') ||                    // General article tag
+            doc.querySelector('main');                         // General main tag
 
         // If still no specific container, fallback to body but warn the user
         if (!mainContentElement || mainContentElement.tagName === 'BODY') {
-            console.warn("Could not find specific article container, using document.body. Parsing might include extra elements.");
+            console.warn("[parseAndDisplayArticle] Could not find specific article container using selectors, falling back to document.body. Parsing might include extra elements.");
             mainContentElement = doc.body;
         }
-        // --- End of content area selection --- 
 
         if (mainContentElement) {
-            console.log("Found content container:", mainContentElement.tagName, mainContentElement.className);
+            console.log("[parseAndDisplayArticle] Found content container:", mainContentElement.tagName, mainContentElement.className);
             articleContent.innerHTML = ''; // Clear loading message
             
-            let elementsToParse = [];
-            // If it's the specific project structure (main -> div.ms-row -> columns), parse the columns' children
-            if (mainContentElement.tagName === 'DIV' && mainContentElement.classList.contains('ms-row') && mainContentElement.classList.contains('block-content') && mainContentElement.children.length > 0) {
-                 console.warn("Container is div.ms-row. Parsing children of its children (columns/sections).");
-                 Array.from(mainContentElement.children).forEach(columnOrSection => {
-                     elementsToParse.push(...Array.from(columnOrSection.children));
-                 });
-             } else {
-                 // Default: parse direct children of the found container
-                 elementsToParse = Array.from(mainContentElement.children);
-             }
-
-            console.log(`Iterating through ${elementsToParse.length} elements for content.`);
+            // Parse direct children of the found container - simplified logic
+            let elementsToParse = Array.from(mainContentElement.children);
+            
+            console.log(`[parseAndDisplayArticle] Iterating through ${elementsToParse.length} elements for content.`);
             let addedNodes = 0;
             elementsToParse.forEach(node => {
+                 // Filter for common block-level content elements
                  if (['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'IMG', 'UL', 'OL', 'BLOCKQUOTE', 'FIGURE', 'TABLE'].includes(node.tagName)) {
                     // Special handling for images: use currentArticleUrl as base
                     if (node.tagName === 'IMG' || node.tagName === 'FIGURE') {
@@ -180,10 +154,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     addedNodes++;
                  }
             });
-            console.log(`Added ${addedNodes} nodes to the article content.`);
+            console.log(`[parseAndDisplayArticle] Added ${addedNodes} nodes to the article content.`);
              makeElementsSelectable(); 
         } else {
-             console.error("Could not find *any* suitable content container using selectors.");
+             console.error("[parseAndDisplayArticle] Could not find *any* suitable content container using selectors.");
              articleContent.innerHTML = '<p class="error-message">Could not parse main article content from the fetched HTML.</p>';
              aiSelectToggle.style.display = 'none'; // Hide FAB if parsing fails
         }
