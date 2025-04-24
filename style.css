@@ -68,11 +68,39 @@ body.ai-select-mode #articleContent > *:hover {
 /* AI Response Styles */
 .ai-response {
     border-left: 4px solid #4CAF50; /* Green border */
-    margin: 1.5em 0;
-    padding: 0.5em 1em;
+    /* margin: 1.5em 0; */ /* Controlled by transition */
+    /* padding: 0.5em 1em; */ /* Controlled by transition */
     background-color: #f0fff0; /* Light green background */
+    /* opacity: 1; */ /* Controlled by transition */
+    /* transition: opacity 0.3s ease-in-out; */ /* Replaced by more comprehensive transition */
+
+    /* Animation Properties */
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    padding-left: 1em; /* Keep horizontal padding */
+    padding-right: 1em;
+    box-sizing: border-box;
+    transition: max-height 0.4s ease-in-out, 
+                opacity 0.3s ease-in-out 0.1s, /* Fade in slightly after height starts */
+                margin-top 0.4s ease-in-out, 
+                margin-bottom 0.4s ease-in-out,
+                padding-top 0.4s ease-in-out, 
+                padding-bottom 0.4s ease-in-out;
+}
+
+.ai-response.ai-response-visible {
+    max-height: 1000px; /* Arbitrary large height */
     opacity: 1;
-    transition: opacity 0.3s ease-in-out;
+    /* Restore original vertical margins and padding */
+    margin-top: 1.5em;
+    margin-bottom: 1.5em;
+    padding-top: 0.5em;
+    padding-bottom: 0.5em;
 }
 
 /* Style for loading indicator */
@@ -91,6 +119,13 @@ body.ai-select-mode #articleContent > *:hover {
 
 .ai-error h4 {
     color: #d32f2f;
+}
+
+/* Make error styles apply correctly during transition */
+.ai-response.ai-error {
+    background-color: #fff0f0; 
+    border-left-color: #f44336;
+    color: #d32f2f; 
 }
 
 /* Optional: Add a subtle indication on the element being processed */

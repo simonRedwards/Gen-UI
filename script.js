@@ -357,12 +357,30 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- 5. Dynamic Content Insertion --- 
     // Helper to insert or replace the AI response/loading block
     function insertOrReplaceResponse(targetElement, responseDiv) {
-         const existingResponse = targetElement.nextElementSibling;
-         if (existingResponse && (existingResponse.classList.contains('ai-response') || existingResponse.classList.contains('ai-loading-indicator'))) {
-             targetElement.parentNode.replaceChild(responseDiv, existingResponse);
-         } else {
-             targetElement.parentNode.insertBefore(responseDiv, targetElement.nextSibling);
-         }
+        console.log("[insertOrReplaceResponse] Inserting/Replacing response div for", targetElement);
+        const existingResponse = targetElement.nextElementSibling;
+        let inserted = false;
+        if (existingResponse && (existingResponse.classList.contains('ai-response') || existingResponse.classList.contains('ai-loading-indicator'))) {
+            console.log("[insertOrReplaceResponse] Replacing existing response/indicator.");
+            targetElement.parentNode.replaceChild(responseDiv, existingResponse);
+            inserted = true;
+        } else {
+            console.log("[insertOrReplaceResponse] Inserting new response div.");
+            targetElement.parentNode.insertBefore(responseDiv, targetElement.nextSibling);
+            inserted = true;
+        }
+
+        // Trigger the animation by adding the visible class after a short delay
+        // Using requestAnimationFrame ensures the element is rendered before the class change
+        if (inserted && responseDiv.classList.contains('ai-response') && !responseDiv.classList.contains('ai-loading-indicator')) {
+            requestAnimationFrame(() => {
+                // Delay adding the class slightly more to ensure transition triggers reliably
+                setTimeout(() => {
+                    console.log("[insertOrReplaceResponse] Adding .ai-response-visible to trigger animation.");
+                    responseDiv.classList.add('ai-response-visible');
+                }, 10); // Small delay (10ms) 
+            });
+        }
     }
     
     function insertAiResponse(targetElement, type, responseContent) {
@@ -403,7 +421,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Insert or replace the response block
         insertOrReplaceResponse(targetElement, responseDiv);
         
-        console.log(`Inserted AI response (${type}) after:`, targetElement);
+        console.log(`[insertAiResponse] Inserted/Replaced AI response (${type}) for:`, targetElement);
         
         // Re-enable selection listeners as inserting might affect siblings
         makeElementsSelectable();
