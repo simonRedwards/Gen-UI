@@ -120,6 +120,12 @@ document.addEventListener('DOMContentLoaded', () => {
              mainContentElement = doc.querySelector('main'); // General main tag
          }
 
+        // Specific handling for <main class="project"> with a single child container
+        if (mainContentElement && mainContentElement.tagName === 'MAIN' && mainContentElement.classList.contains('project') && mainContentElement.children.length === 1) {
+             console.warn("Selected <main class='project'> has only one child. Assuming child is the actual content container.");
+             mainContentElement = mainContentElement.children[0]; // Re-target to the single child
+        }
+
         // If still no specific container, fallback to body but warn the user
         if (!mainContentElement || mainContentElement.tagName === 'BODY') {
             console.warn("Could not find specific article container, using document.body. Parsing might include extra elements.");
