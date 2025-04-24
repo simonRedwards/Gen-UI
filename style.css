@@ -139,7 +139,7 @@ header button#aiSelectToggle {
 #aiSelectToggle {
     position: fixed; /* Position relative to the viewport */
     bottom: 30px;    /* Distance from bottom */
-    left: 30px;      /* Distance from left */
+    right: 30px;     /* Distance from right */
     width: 110px;    /* Even larger width */
     height: 110px;   /* Even larger height */
     background-color: #0078d4; /* Microsoft blue */
@@ -281,7 +281,7 @@ header button#aiSelectToggle {
         width: 80px; /* Larger FAB on mobile */
         height: 80px;
         bottom: 15px; 
-        left: 15px; /* Position left on mobile */
+        right: 15px; /* Position right on mobile */
         font-size: 13px; /* Adjust font for mobile size */
     }
 } 
